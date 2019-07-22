@@ -8,11 +8,9 @@ import scipy.io
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 
-
-
-
 class VideoDataset(Dataset):
-   
+    """Dataset Class for Loading Video"""
+
     def __init__(self,videos_dir, label_dir,chunk_step,channels,width,hight, transform=None):
     
 
@@ -30,7 +28,7 @@ class VideoDataset(Dataset):
         
         
         videos2labels={}
-
+        
         for video in video_file_list:
             for labels in label_file_list:
                 if video[:-9] == labels[:-10]:
@@ -42,15 +40,14 @@ class VideoDataset(Dataset):
             new_frames, new_labels = self.readVideoLabels(videos_dir+'/'+video, label_dir+'/'+labels_file)
             self.all_frames = torch.cat((self.all_frames,new_frames),0)
             self.all_labels = torch.cat((self.all_labels,new_labels),0)
-
-	self.all_frames = self.all_frames[2:]
+            
+        self.all_frames = self.all_frames[2:]
         self.all_labels = self.all_labels[2:]
-
+        
     def __len__(self):
         return len(self.all_frames)
 
     def readVideoLabels(self, videoFile, labelsFile):
-        # Open the video file
         cap = cv2.VideoCapture(videoFile)
         out_frames = torch.FloatTensor(1,self.channels,self.width,self.hight)
         out_labels  = torch.FloatTensor(1)
@@ -65,9 +62,9 @@ class VideoDataset(Dataset):
                          3:'Hand In Shelf'     ,
                          4:'Inspect Product'   ,
                          5:'Inspect Shelf'      }
-
+        
         count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
+        
         for frame in range(1,count+1):
             frames2actions[frame]='None'
             frames2labels[frame] = 0
@@ -81,21 +78,21 @@ class VideoDataset(Dataset):
                     frames2labels[key] = i+1
                     
         frame_idx=0
+        
         for i in range(0,count):
             ret, frame = cap.read()
-
+            
             if not ret:
                 break
                 
             frame_idx +=1
-
             if(frame_idx % self.chunk_step == 0):
                 frame = cv2.resize(frame, (self.width, self.hight))
-		frame = transforms.functional.to_pil_image(frame)
-
+                frame = transforms.functional.to_pil_image(frame)
+                
                 if self.transform is not None:
                     frame = self.transform(frame)
-
+                    
                 frame = torch.unsqueeze(frame,0)
                 frame_label =  torch.Tensor([frames2labels[frame_idx]])
                 out_frames = torch.cat((out_frames,frame),0)
