@@ -30,6 +30,7 @@ class VideoDataset(Dataset):
         
         
         videos2labels={}
+
         for video in video_file_list:
             for labels in label_file_list:
                 if video[:-9] == labels[:-10]:
@@ -41,6 +42,7 @@ class VideoDataset(Dataset):
             new_frames, new_labels = self.readVideoLabels(videos_dir+'/'+video, label_dir+'/'+labels_file)
             self.all_frames = torch.cat((self.all_frames,new_frames),0)
             self.all_labels = torch.cat((self.all_labels,new_labels),0)
+
 	self.all_frames = self.all_frames[2:]
         self.all_labels = self.all_labels[2:]
 
@@ -63,7 +65,9 @@ class VideoDataset(Dataset):
                          3:'Hand In Shelf'     ,
                          4:'Inspect Product'   ,
                          5:'Inspect Shelf'      }
+
         count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
         for frame in range(1,count+1):
             frames2actions[frame]='None'
             frames2labels[frame] = 0
@@ -79,14 +83,19 @@ class VideoDataset(Dataset):
         frame_idx=0
         for i in range(0,count):
             ret, frame = cap.read()
+
             if not ret:
                 break
                 
             frame_idx +=1
+
             if(frame_idx % self.chunk_step == 0):
                 frame = cv2.resize(frame, (self.width, self.hight))
+		frame = transforms.functional.to_pil_image(frame)
+
                 if self.transform is not None:
                     frame = self.transform(frame)
+
                 frame = torch.unsqueeze(frame,0)
                 frame_label =  torch.Tensor([frames2labels[frame_idx]])
                 out_frames = torch.cat((out_frames,frame),0)
