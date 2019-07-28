@@ -45,7 +45,7 @@ class VideoDataset(Dataset):
       for video in self.video_file_list:
           cap = cv2.VideoCapture(self.videos_dir+'/'+video)
           vid_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-          out_frames = vid_frames//self.chunk_step
+          out_frames = ((vid_frames-6)//self.chunk_step)+1
           total_count += out_frames
           self.video2endframe[video]= total_count
 
@@ -67,13 +67,10 @@ class VideoDataset(Dataset):
                   for key in range(start,end+1):
                       frames2labels[key] = i+1
 
-          for k in range (1,vid_frames+1):
-            if k % self.chunk_step ==0:
+          for k in range (7,vid_frames+1,self.chunk_step):
               self.all_labels = torch.cat((self.all_labels,torch.LongTensor([frames2labels[k]])),0)
-      self.all_labels = self.all_labels[1:]
 
-          
-	
+      self.all_labels = self.all_labels[1:]
 
     def __len__(self):
         return len(self.all_labels[1:])
@@ -81,7 +78,7 @@ class VideoDataset(Dataset):
     
     def get_frame(self,videoFile, count_from_offset):
         cap = cv2.VideoCapture(self.videos_dir+'/'+videoFile)
-        cap.set(cv2.CAP_PROP_POS_FRAMES,(count_from_offset*self.chunk_step)-1)
+        cap.set(cv2.CAP_PROP_POS_FRAMES,(count_from_offset*self.chunk_step)-6)
         ret, frame = cap.read()
         frame = cv2.resize(frame, (self.width, self.hight))
       
